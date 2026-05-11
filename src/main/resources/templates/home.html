@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AI Content System</title>
+<link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body class="home-page">
+<nav class="navbar">
+  <div class="nav-brand" style="background:linear-gradient(135deg,#a78bfa,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:900">✦ AI Content System</div>
+  <div class="nav-links">
+    <a th:href="@{/auth/login}"    class="btn btn-outline" style="color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.2)">Войти</a>
+    <a th:href="@{/auth/register}" class="btn btn-primary">Начать бесплатно</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <h1>Создавайте контент<br/><span class="highlight">с помощью AI</span></h1>
+    <p class="hero-subtitle">Генерируйте тексты, решайте задачи, переводите и проверяйте ошибки — всё в одном месте, бесплатно.</p>
+    <div class="hero-actions">
+      <a th:href="@{/auth/register}" class="btn btn-primary btn-large">Начать бесплатно →</a>
+      <a th:href="@{/auth/login}"    class="btn btn-large" style="background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2)">Войти</a>
+    </div>
+  </div>
+  <div class="hero-image">
+    <div class="demo-card">
+      <div class="demo-label">✦ Пример решения задачи</div>
+      <div class="demo-topic">🔢 Найти корни уравнения x² - 5x + 6 = 0</div>
+      <div class="demo-type">Математика · Алгебра · Русский</div>
+      <div class="demo-result">
+        <strong>## Решение</strong><br/>
+        Используем формулу дискриминанта:<br/>
+        D = b² - 4ac = 25 - 24 = 1<br/>
+        x₁ = (5+1)/2 = <strong>3</strong>, x₂ = (5-1)/2 = <strong>2</strong>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <h2>Всё что нужно в одном месте</h2>
+  <div class="features-grid">
+    <div class="feature-card"><span class="feature-icon">✨</span><h3>Генерация текстов</h3><p>Тексты, письма, планы, задания на 3 языках</p></div>
+    <div class="feature-card"><span class="feature-icon">🔢</span><h3>Решение задач</h3><p>Математика, физика, химия пошагово с формулами</p></div>
+    <div class="feature-card"><span class="feature-icon">📸</span><h3>Фото задачи</h3><p>Загрузи фото — AI прочитает и решит задачу</p></div>
+    <div class="feature-card"><span class="feature-icon">📄</span><h3>Анализ PDF/DOCX</h3><p>Загрузи документ — получи краткое содержание</p></div>
+    <div class="feature-card"><span class="feature-icon">🎤</span><h3>Голосовой ввод</h3><p>Диктуй тему вместо набора текста</p></div>
+    <div class="feature-card"><span class="feature-icon">🔊</span><h3>Озвучка текста</h3><p>AI прочитает результат вслух</p></div>
+    <div class="feature-card"><span class="feature-icon">📊</span><h3>Оценка текста</h3><p>Баллы за грамотность, стиль и структуру</p></div>
+    <div class="feature-card"><span class="feature-icon">🌍</span><h3>Перевод</h3><p>Перевод на 6 языков с объяснением грамматики</p></div>
+    <div class="feature-card"><span class="feature-icon">✅</span><h3>Проверка ошибок</h3><p>Орфография и пунктуация через AI</p></div>
+    <div class="feature-card"><span class="feature-icon">💬</span><h3>Чат с AI</h3><p>Задай вопрос про сгенерированный текст</p></div>
+    <div class="feature-card"><span class="feature-icon">🕐</span><h3>История версий</h3><p>Откатись к любой предыдущей версии</p></div>
+    <div class="feature-card"><span class="feature-icon">🔗</span><h3>Публичные ссылки</h3><p>Поделись результатом без регистрации</p></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>© 2026 ✦ AI Content System · Дипломный проект · Бактияр Акжелен</p>
+</footer>
+</body>
+</html>

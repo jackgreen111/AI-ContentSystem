@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>Пользователи — Администратор</title>
+<link rel="stylesheet" th:href="@{/css/style.css}"/></head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title">AI Content System</span>
+    </div>
+    <div class="page-body">
+
+  <div class="page-header">
+    <h1>👥 Управление пользователями</h1>
+    <p>Всего: <strong th:text="${#lists.size(users)}"></strong></p>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>ID</th><th>Имя</th><th>Email</th><th>Роль</th><th>Статус</th><th>Регистрация</th><th>Действия</th></tr></thead>
+    <tbody>
+      <tr th:each="u : ${users}" th:classappend="${!u.enabled}?' row-disabled':''">
+        <td th:text="${u.id}"></td>
+        <td th:text="${u.username}"></td>
+        <td th:text="${u.email}"></td>
+        <td><span class="badge" th:classappend="${u.role.name()=='ADMIN'}?' badge-primary':''" th:text="${u.role}"></span></td>
+        <td>
+          <span th:if="${u.enabled}" class="badge badge-success">Активен</span>
+          <span th:unless="${u.enabled}" class="badge badge-danger">Заблокирован</span>
+        </td>
+        <td th:text="${#temporals.format(u.createdAt,'dd.MM.yyyy')}"></td>
+        <td>
+          <form th:action="@{/admin/users/{id}/toggle(id=${u.id})}" method="post" style="display:inline">
+            <button type="submit" class="btn btn-sm btn-outline" th:text="${u.enabled}?'Заблокировать':'Разблокировать'"></button>
+          </form>
+          <form th:action="@{/admin/users/{id}/delete(id=${u.id})}" method="post" style="display:inline"
+                onsubmit="return confirm('Удалить пользователя?')">
+            <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+          </form>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+<script th:src="@{/js/main.js}"></script>
+    </div>
+  </div>
+</div>
+</body></html>

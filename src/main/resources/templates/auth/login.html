@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Вход — AI Content System</title>
+<link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body class="auth-page">
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-logo-text">✦ AI Content System</div>
+      <h1>Добро пожаловать!</h1>
+      <p>Войдите в свой аккаунт</p>
+    </div>
+    <div th:if="${errorMessage}"  class="alert alert-error"   th:text="${errorMessage}"></div>
+    <div th:if="${logoutMessage}" class="alert alert-success"  th:text="${logoutMessage}"></div>
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <form th:action="@{/auth/login}" method="post" class="auth-form">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="username" placeholder="example@mail.com" required autocomplete="email"/>
+      </div>
+      <div class="form-group">
+        <label>Пароль</label>
+        <input type="password" name="password" placeholder="Введите пароль" required autocomplete="current-password"/>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full btn-large">Войти →</button>
+    </form>
+    <div class="auth-footer"><p>Нет аккаунта? <a th:href="@{/auth/register}">Зарегистрироваться</a></p></div>
+    <div class="demo-accounts">
+      <p><strong>Тестовые аккаунты:</strong></p>
+      <p>👤 <code>user@test.kz</code> / <code>User1234!</code></p>
+      <p>🔧 <code>admin@ai-content.kz</code> / <code>Admin123!</code></p>
+    </div>
+  </div>
+</div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

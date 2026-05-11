@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Результат — AI Content System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown-light.min.css" id="mdCss"/>
+    <script th:inline="none">MathJax={tex:{inlineMath:[["$","$"],["\\(","\\)"]]},svg:{fontCache:"global"}};</script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</head>
+<body>
+<div class="app-layout">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div class="main-content">
+        <div class="topbar">
+            <span class="topbar-title">AI Content System</span>
+        </div>
+        <div class="page-body">
+
+            <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+            <div th:if="${generation != null}">
+
+                <!-- Мета-панель -->
+                <div class="meta-panel">
+                    <h1 class="result-topic" th:text="${generation.topic}"></h1>
+                    <div class="meta-badges">
+                        <span class="badge badge-primary" th:text="${generation.contentType.displayName}"></span>
+                        <span class="badge" th:text="${generation.style.displayName}"></span>
+                        <span class="badge" th:text="${generation.language.displayName}"></span>
+                        <span class="badge" th:text="${generation.volume.displayName}"></span>
+                    </div>
+                    <div class="meta-info">
+                        <span>🕐 <span th:text="${#temporals.format(generation.createdAt,'dd.MM.yyyy HH:mm')}"></span></span>
+                        <span>🔤 Токенов: <span th:text="${generation.tokensUsed}"></span></span>
+                        <span>📝 Слов: <span th:text="${generation.wordCount}"></span></span>
+                    </div>
+                </div>
+
+                <!-- Результат -->
+                <div class="result-card">
+                    <div class="result-actions-top">
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                            <form th:action="@{/content/{id}/toggle-save(id=${generation.id})}" method="post" style="display:inline">
+                                <button type="submit" class="btn btn-sm btn-outline"
+                                        th:text="${generation.saved}?'★ В библиотеке':'☆ Сохранить'"></button>
+                            </form>
+                            <form th:action="@{/content/{id}/rate(id=${generation.id})}" method="post" style="display:inline">
+                                <input type="hidden" name="rating" value="1"/>
+                                <button type="submit" class="btn btn-sm"
+                                        th:classappend="${generation.rating==1}?' btn-success':' btn-outline'">👍</button>
+                            </form>
+                            <form th:action="@{/content/{id}/rate(id=${generation.id})}" method="post" style="display:inline">
+                                <input type="hidden" name="rating" value="-1"/>
+                                <button type="submit" class="btn btn-sm"
+                                        th:classappend="${generation.rating==-1}?' btn-danger':' btn-outline'">👎</button>
+                            </form>
+                            <form th:action="@{/content/{id}/regenerate(id=${generation.id})}" method="post" style="display:inline">
+                                <button type="submit" class="btn btn-outline btn-sm">🔄 Снова</button>
+                            </form>
+                            <form th:action="@{/content/{id}/share(id=${generation.id})}" method="post" style="display:inline">
+                                <button type="submit" class="btn btn-outline btn-sm">🔗 Поделиться</button>
+                            </form>
+                        </div>
+                        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                            <span style="font-size:13px;color:var(--text-muted)">Экспорт:</span>
+                            <a th:href="@{/content/{id}/export/txt(id=${generation.id})}"  class="btn btn-sm btn-outline">TXT</a>
+                            <a th:href="@{/content/{id}/export/docx(id=${generation.id})}" class="btn btn-sm btn-outline">DOCX</a>
+                            <a th:href="@{/content/{id}/export/pdf(id=${generation.id})}"  class="btn btn-sm btn-outline">PDF</a>
+                        </div>
+                    </div>
+
+                    <!-- Кнопки вида -->
+                    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+                        <button class="btn btn-sm btn-primary" id="btnMd"   onclick="showMd()">📖 Форматированный</button>
+                        <button class="btn btn-sm btn-outline" id="btnRaw"  onclick="showRaw()">📄 Исходный</button>
+                        <button class="btn btn-sm btn-outline" id="speakBtn" onclick="speakText()">🔊 Озвучить</button>
+                        <button class="btn btn-sm btn-outline" id="stopBtn"  onclick="stopSpeak()" style="display:none">⏹ Стоп</button>
+                        <button class="btn btn-sm btn-outline" onclick="copyText()">📋 Копировать</button>
+                    </div>
+
+                    <!-- Текст -->
+                    <div id="mdView" class="markdown-body result-md" th:attr="data-raw=${generation.generatedText}"></div>
+                    <pre id="rawView" style="display:none;white-space:pre-wrap;font-family:inherit;font-size:15px;line-height:1.7;color:var(--text)"
+                         th:text="${generation.generatedText}"></pre>
+
+                    <!-- Публичная ссылка -->
+                    <div th:if="${shareLink}" class="alert alert-success" style="margin-top:12px">
+                        🔗 Ссылка: <a th:href="${shareLink}" target="_blank" th:text="'http://localhost:8080' + ${shareLink}"></a>
+                    </div>
+
+                    <!-- Картинка -->
+                    <div th:if="${generation.imageUrl != null}" style="margin-top:16px;text-align:center">
+                        <img th:src="${generation.imageUrl}" alt="AI картинка"
+                             style="max-width:100%;max-height:400px;border-radius:12px;border:1px solid var(--border)"/>
+                    </div>
+
+                    <!-- Теги -->
+                    <div class="tags-section">
+                        <div id="tagsList" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <span th:if="${generation.tags != null and !#strings.isEmpty(generation.tags)}"
+                th:each="tag : ${#strings.arraySplit(generation.tags,',')}"
+                class="tag-chip" th:text="${tag}"></span>
+                        </div>
+                        <div style="display:flex;gap:8px">
+                            <input type="text" id="tagInput" placeholder="Тег (Enter)"
+                                   style="width:160px;padding:5px 10px;font-size:13px"/>
+                            <button class="btn btn-sm btn-outline" onclick="addTag()">+ Тег</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Инструменты -->
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <h3>📊 AI-оценка</h3>
+                        <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">
+                            Оценка по 5 критериям с баллами
+                        </p>
+                        <button class="btn btn-primary btn-sm" onclick="evaluateText()" id="evalBtn">Оценить текст</button>
+                        <div id="evalResult" style="display:none;margin-top:12px"></div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3>✅ Проверка ошибок</h3>
+                        <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">
+                            Орфография, пунктуация, стиль
+                        </p>
+                        <button class="btn btn-primary btn-sm" onclick="proofreadText()" id="proofBtn">Проверить</button>
+                        <div id="proofResult" class="tool-result" style="display:none;margin-top:12px"></div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3>🌍 Перевод</h3>
+                        <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">
+                            Перевод с объяснением грамматики
+                        </p>
+                        <select id="translateLang" style="width:100%;margin-bottom:8px">
+                            <option value="English">🇬🇧 English</option>
+                            <option value="Казахский">🇰🇿 Казахский</option>
+                            <option value="Русский">🇷🇺 Русский</option>
+                            <option value="Немецкий">🇩🇪 Немецкий</option>
+                            <option value="Французский">🇫🇷 Французский</option>
+                            <option value="Испанский">🇪🇸 Испанский</option>
+                        </select>
+                        <button class="btn btn-primary btn-sm" onclick="translateText()" id="transBtn">Перевести</button>
+                        <div id="transResult" class="tool-result" style="display:none;margin-top:12px"></div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3>🎨 Картинка по теме</h3>
+                        <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">
+                            AI нарисует иллюстрацию к тексту
+                        </p>
+                        <form th:action="@{/content/{id}/generate-image(id=${generation.id})}" method="post">
+                            <button type="submit" class="btn btn-primary btn-sm">🖼 Нарисовать</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Чат с AI -->
+                <div class="result-card">
+                    <h3 style="margin-bottom:12px">💬 Чат с AI про этот текст</h3>
+                    <div id="chatHistory"
+                         style="min-height:60px;max-height:280px;overflow-y:auto;margin-bottom:12px;
+                  display:flex;flex-direction:column;gap:8px;padding:12px;
+                  background:var(--bg);border-radius:8px;border:1px solid var(--border)">
+                        <div class="chat-msg chat-ai">Привет! Спрашивай про этот текст — объясню, дополню, переформулирую.</div>
+                    </div>
+                    <div style="display:flex;gap:8px">
+                        <input type="text" id="chatInput" placeholder="Твой вопрос..." style="flex:1"/>
+                        <button class="btn btn-primary" onclick="sendChat()">➤</button>
+                    </div>
+                    <div id="chatSpinner" style="display:none;color:var(--text-muted);font-size:13px;margin-top:6px">
+                        ⏳ AI думает...
+                    </div>
+                </div>
+
+                <!-- История версий -->
+                <div th:if="${versions != null and !#lists.isEmpty(versions)}" class="result-card">
+                    <h3 style="margin-bottom:12px">🕐 История версий (<span th:text="${#lists.size(versions)}"></span>)</h3>
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                        <div th:each="ver : ${versions}" class="version-item">
+                            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                                <div>
+                                    <strong th:text="'v' + ${ver.versionNum}"></strong>
+                                    <span class="gen-date" th:text="' · ' + ${#temporals.format(ver.createdAt,'dd.MM HH:mm')}"></span>
+                                    <span style="font-size:13px;color:var(--text-muted)"
+                                          th:text="' · ' + ${#strings.abbreviate(ver.text,70)}"></span>
+                                </div>
+                                <form th:action="@{/content/{gId}/restore/{vId}(gId=${generation.id},vId=${ver.id})}"
+                                      method="post">
+                                    <button type="submit" class="btn btn-sm btn-outline">↩ Восстановить</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Нижние действия -->
+                <div class="result-footer">
+                    <a th:href="@{/content/generate}" class="btn btn-primary">✨ Создать новый</a>
+                    <a th:href="@{/content/history}"  class="btn btn-outline">← История</a>
+                    <a th:if="${generation.shareToken != null}"
+                       th:href="@{/public/{t}(t=${generation.shareToken})}"
+                       target="_blank" class="btn btn-outline">🔗 Открыть публично</a>
+                    <form th:action="@{/content/{id}/delete(id=${generation.id})}" method="post"
+                          style="display:inline" onsubmit="return confirm('Удалить?')">
+                        <button type="submit" class="btn btn-danger btn-sm">🗑 Удалить</button>
+                    </form>
+                </div>
+            </div>
+
+
+            <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+            <script th:src="@{/js/main.js}"></script>
+            <script th:inline="javascript">
+                const genId   = [[${generation?.id}]];
+                const rawEl   = document.getElementById('mdView');
+                const rawText = rawEl ? (rawEl.getAttribute('data-raw') || '') : '';
+                if (rawText && rawEl) rawEl.innerHTML = marked.parse(rawText);
+
+                function showMd()  {
+                  rawEl.style.display='block'; document.getElementById('rawView').style.display='none';
+                  document.getElementById('btnMd').className='btn btn-sm btn-primary';
+                  document.getElementById('btnRaw').className='btn btn-sm btn-outline';
+                }
+                function showRaw() {
+                  rawEl.style.display='none'; document.getElementById('rawView').style.display='block';
+                  document.getElementById('btnRaw').className='btn btn-sm btn-primary';
+                  document.getElementById('btnMd').className='btn btn-sm btn-outline';
+                }
+                function copyText() { navigator.clipboard.writeText(rawText).then(()=>alert('Скопировано!')); }
+
+                // Озвучка
+                function speakText() {
+                  if (!('speechSynthesis' in window)) { alert('Браузер не поддерживает озвучку'); return; }
+                  const utt = new SpeechSynthesisUtterance(rawText);
+                  utt.lang='ru-RU'; utt.rate=0.95;
+                  utt.onend = () => toggleSpeakBtns(false);
+                  window.speechSynthesis.speak(utt);
+                  toggleSpeakBtns(true);
+                }
+                function stopSpeak() { window.speechSynthesis.cancel(); toggleSpeakBtns(false); }
+                function toggleSpeakBtns(on) {
+                  document.getElementById('speakBtn').style.display = on?'none':'';
+                  document.getElementById('stopBtn').style.display  = on?'':'none';
+                }
+
+                // Теги
+                let currentTags = [];
+                document.querySelectorAll('.tag-chip').forEach(t => currentTags.push(t.textContent.replace('×','').trim()));
+                function addTag() {
+                  const inp = document.getElementById('tagInput');
+                  const tag = inp.value.trim();
+                  if (!tag || currentTags.includes(tag)) { inp.value=''; return; }
+                  currentTags.push(tag); renderTags(); inp.value=''; saveTags();
+                }
+                document.getElementById('tagInput')?.addEventListener('keydown', e=>{if(e.key==='Enter'){e.preventDefault();addTag();}});
+                function renderTags() {
+                  document.getElementById('tagsList').innerHTML = currentTags.map(t =>
+                    `<span class="tag-chip">${t} <span onclick="removeTag('${t}')" style="cursor:pointer;opacity:.6">×</span></span>`).join('');
+                }
+                function removeTag(t) { currentTags=currentTags.filter(x=>x!==t); renderTags(); saveTags(); }
+                function saveTags() {
+                  fetch(`/content/${genId}/tags`,{method:'POST',headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({tags:currentTags.join(',')})});
+                }
+
+                // AI Оценка
+                async function evaluateText() {
+                  const btn=document.getElementById('evalBtn');
+                  btn.textContent='⏳...'; btn.disabled=true;
+                  const resp = await fetch(`/content/${genId}/evaluate`,{method:'POST'});
+                  const data = await resp.json();
+                  const res  = document.getElementById('evalResult');
+                  res.style.display='block';
+                  let parsed;
+                  try { parsed=JSON.parse((data.result||'{}').replace(/```json|```/g,'')); } catch{ res.textContent=data.result||'Ошибка'; btn.textContent='Оценить текст'; btn.disabled=false; return; }
+                  const crit={'grammar':'Грамотность','style':'Стиль','structure':'Структура','topic':'Раскрытие темы','originality':'Оригинальность'};
+                  let html='<div style="display:flex;flex-direction:column;gap:8px">';
+                  for(const[k,l] of Object.entries(crit)){
+                    const v=parsed[k]||0, c=v>=80?'#22c55e':v>=60?'#f59e0b':'#ef4444';
+                    html+=`<div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px"><span>${l}</span><strong style="color:${c}">${v}/100</strong></div><div style="background:var(--border);border-radius:999px;height:6px"><div style="width:${v}%;background:${c};height:6px;border-radius:999px;transition:.5s"></div></div></div>`;
+                  }
+                  if(parsed.summary) html+=`<p style="font-size:13px;color:var(--text-muted);margin-top:4px">💡 ${parsed.summary}</p>`;
+                  res.innerHTML=html+'</div>';
+                  btn.textContent='Оценить текст'; btn.disabled=false;
+                }
+
+                // Проверка
+                async function proofreadText() {
+                  const btn=document.getElementById('proofBtn');
+                  btn.textContent='⏳...'; btn.disabled=true;
+                  const resp=await fetch(`/content/${genId}/proofread`,{method:'POST'});
+                  const data=await resp.json();
+                  const res=document.getElementById('proofResult');
+                  res.style.display='block';
+                  res.innerHTML=marked.parse(data.result||'Ошибок не найдено.');
+                  btn.textContent='Проверить'; btn.disabled=false;
+                }
+
+                // Переводчик
+                async function translateText() {
+                  const lang=document.getElementById('translateLang').value;
+                  const btn=document.getElementById('transBtn');
+                  btn.textContent='⏳...'; btn.disabled=true;
+                  const resp=await fetch(`/content/${genId}/translate`,{method:'POST',
+                    headers:{'Content-Type':'application/json'},body:JSON.stringify({lang})});
+                  const data=await resp.json();
+                  const res=document.getElementById('transResult');
+                  res.style.display='block';
+                  res.innerHTML=marked.parse(data.result||'');
+                  btn.textContent='Перевести'; btn.disabled=false;
+                }
+
+                // Чат
+                async function sendChat() {
+                  const inp=document.getElementById('chatInput');
+                  const msg=inp.value.trim(); if(!msg) return;
+                  inp.value=''; addChatMsg(msg,'user');
+                  document.getElementById('chatSpinner').style.display='block';
+                  const resp=await fetch(`/content/${genId}/chat`,{method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({message:msg,context:rawText})});
+                  const data=await resp.json();
+                  addChatMsg(data.reply,'ai');
+                  document.getElementById('chatSpinner').style.display='none';
+                }
+                function addChatMsg(text,role){
+                  const div=document.createElement('div');
+                  div.className=role==='user'?'chat-msg chat-user':'chat-msg chat-ai';
+                  div.textContent=text;
+                  const h=document.getElementById('chatHistory');
+                  h.appendChild(div); h.scrollTop=9999;
+                }
+                document.getElementById('chatInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')sendChat();});
+            </script>
+        </div>
+    </div>
+</div>
+</body>
+</html>

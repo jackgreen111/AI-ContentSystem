@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><title>Администратор — AI Content System</title>
+<link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title">AI Content System</span>
+    </div>
+    <div class="page-body">
+
+  <div class="page-header"><h1>📊 Панель администратора</h1></div>
+  <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat-card stat-card-primary">
+      <div class="stat-number" th:text="${totalUsers}">0</div>
+      <div class="stat-label">Пользователей</div>
+    </div>
+    <div class="stat-card stat-card-success">
+      <div class="stat-number" th:text="${totalGenerations}">0</div>
+      <div class="stat-label">Генераций</div>
+    </div>
+    <div class="stat-card stat-card-info">
+      <div class="stat-number" th:text="${totalTokens}">0</div>
+      <div class="stat-label">Токенов</div>
+    </div>
+    <div class="stat-card stat-card-warning">
+      <div class="stat-number" th:text="${totalWords}">0</div>
+      <div class="stat-label">Слов</div>
+    </div>
+  </div>
+  <div class="section" style="margin-top:24px">
+    <h2>Статистика по типам</h2>
+    <table class="data-table">
+      <thead><tr><th>Тип контента</th><th>Количество</th></tr></thead>
+      <tbody>
+        <tr th:each="row : ${statsByType}">
+          <td th:text="${row[0]}"></td><td th:text="${row[1]}"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:16px">
+    <a th:href="@{/admin/users}" class="btn btn-primary">👥 Пользователи</a>
+    <a th:href="@{/h2-console}" target="_blank" class="btn btn-outline">🗄 База данных</a>
+  </div>
+
+<script th:src="@{/js/main.js}"></script>
+    </div>
+  </div>
+</div>
+</body></html>

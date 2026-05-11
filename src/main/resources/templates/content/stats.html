@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Статистика — AI Content System</title>
+<link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title">AI Content System</span>
+    </div>
+    <div class="page-body">
+
+  <div class="page-header">
+    <h1>📊 Статистика</h1>
+    <p>Анализ вашей активности</p>
+  </div>
+
+  <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat-card stat-card-primary">
+      <div class="stat-number" th:text="${stats.totalGenerations}">0</div>
+      <div class="stat-label">Генераций</div>
+    </div>
+    <div class="stat-card stat-card-success">
+      <div class="stat-number" th:text="${stats.totalWords}">0</div>
+      <div class="stat-label">Слов</div>
+    </div>
+    <div class="stat-card stat-card-info">
+      <div class="stat-number" th:text="${stats.totalTokens}">0</div>
+      <div class="stat-label">Токенов</div>
+    </div>
+    <div class="stat-card stat-card-warning">
+      <div class="stat-number" th:text="${stats.likedCount}">0</div>
+      <div class="stat-label">Понравилось 👍</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px">
+    <!-- Пончик по типам -->
+    <div class="result-card">
+      <h3 style="margin-bottom:16px">По типам контента</h3>
+      <canvas id="typeChart" height="250"></canvas>
+    </div>
+    <!-- Бар по языкам -->
+    <div class="result-card">
+      <h3 style="margin-bottom:16px">По языкам</h3>
+      <canvas id="langChart" height="250"></canvas>
+    </div>
+  </div>
+
+  <!-- Активность по дням -->
+  <div class="result-card" style="margin-top:20px">
+    <h3 style="margin-bottom:16px">Активность за последние 14 дней</h3>
+    <canvas id="activityChart" height="120"></canvas>
+  </div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script th:src="@{/js/main.js}"></script>
+<script th:inline="javascript">
+const typeData  = /*[[${typeChartData}]]*/ {};
+const langData  = /*[[${langChartData}]]*/ {};
+const actData   = /*[[${activityData}]]*/ {};
+const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+const textColor = isDark ? '#e2e8f0' : '#1e293b';
+
+new Chart(document.getElementById('typeChart'), {
+  type: 'doughnut',
+  data: {
+    labels: Object.keys(typeData),
+    datasets: [{ data: Object.values(typeData),
+      backgroundColor: ['#6366f1','#22c55e','#3b82f6','#f59e0b','#ef4444'] }]
+  },
+  options: { plugins: { legend: { labels: { color: textColor } } } }
+});
+
+new Chart(document.getElementById('langChart'), {
+  type: 'bar',
+  data: {
+    labels: Object.keys(langData),
+    datasets: [{ data: Object.values(langData), backgroundColor: '#6366f1' }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: { x: { ticks: { color: textColor } }, y: { ticks: { color: textColor, stepSize: 1 } } }
+  }
+});
+
+new Chart(document.getElementById('activityChart'), {
+  type: 'line',
+  data: {
+    labels: Object.keys(actData),
+    datasets: [{ data: Object.values(actData), borderColor: '#6366f1',
+      backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.4 }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: { x: { ticks: { color: textColor } }, y: { ticks: { color: textColor, stepSize: 1 } } }
+  }
+});
+</script>
+    </div>
+  </div>
+</div>
+</body>
+</html>

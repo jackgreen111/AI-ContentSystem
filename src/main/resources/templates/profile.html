@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Профиль — AI Content System</title>
+<link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title">👤 Профиль</span>
+    </div>
+    <div class="page-body">
+      <div class="page-header animate-up"><h1>👤 Мой профиль</h1></div>
+      <div class="profile-card animate-up">
+        <div class="profile-avatar">
+          <div class="avatar-circle" th:text="${#strings.substring(user.username,0,1).toUpperCase()}"></div>
+        </div>
+        <div class="profile-info">
+          <div class="profile-name" th:text="${user.username}"></div>
+          <div class="profile-email" th:text="${user.email}"></div>
+          <div style="margin-top:8px"><span class="badge badge-primary" th:text="${user.role}"></span></div>
+          <div class="profile-date">Зарегистрирован: <span th:text="${#temporals.format(user.createdAt,'dd.MM.yyyy')}"></span></div>
+        </div>
+      </div>
+      <div class="section">
+        <h2 style="margin-bottom:14px">Быстрый доступ</h2>
+        <div class="links-grid stagger">
+          <a th:href="@{/content/generate}"   class="link-card"><span>✨</span> Генерировать</a>
+          <a th:href="@{/content/math}"       class="link-card"><span>🔢</span> Математика</a>
+          <a th:href="@{/content/history}"    class="link-card"><span>📜</span> История</a>
+          <a th:href="@{/content/library}"    class="link-card"><span>⭐</span> Библиотека</a>
+          <a th:href="@{/content/stats}"      class="link-card"><span>📊</span> Статистика</a>
+          <a th:href="@{/content/upload-doc}" class="link-card"><span>📄</span> Загрузить файл</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Математика — AI Content System</title>
+<link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title">🔢 Решение задач</span>
+    </div>
+    <div class="page-body">
+      <div class="page-header animate-up">
+        <h1>🔢 Решение задач</h1>
+        <p>Введите условие или загрузите фото — AI решит пошагово с формулами</p>
+      </div>
+
+      <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:24px;align-items:start">
+
+        <form th:action="@{/content/math}" method="post" enctype="multipart/form-data"
+              class="animate-up" id="mathForm" style="display:flex;flex-direction:column;gap:20px">
+
+          <!-- Предмет -->
+          <div class="form-group">
+            <label>Предмет</label>
+            <div class="math-subjects">
+              <label class="subject-card">
+                <input type="radio" name="subject" value="algebra" checked/>
+                <span class="subject-icon">📐</span>Алгебра
+              </label>
+              <label class="subject-card">
+                <input type="radio" name="subject" value="geometry"/>
+                <span class="subject-icon">📏</span>Геометрия
+              </label>
+              <label class="subject-card">
+                <input type="radio" name="subject" value="physics"/>
+                <span class="subject-icon">⚡</span>Физика
+              </label>
+              <label class="subject-card">
+                <input type="radio" name="subject" value="chemistry"/>
+                <span class="subject-icon">🧪</span>Химия
+              </label>
+            </div>
+          </div>
+
+          <!-- Условие задачи -->
+          <div class="form-group">
+            <label for="problem">Условие задачи <span class="label-hint">необязательно если загружаете фото</span></label>
+            <textarea id="problem" name="problem" rows="4"
+                      placeholder="Например: Найти площадь треугольника со сторонами 3, 4 и 5. Или: реши систему уравнений x+y=5, x-y=1"></textarea>
+          </div>
+
+          <!-- Фото задачи -->
+          <div class="form-group">
+            <label>📸 Фото задачи <span class="label-hint">через Gemini AI</span></label>
+            <div class="upload-area" id="uploadArea"
+                 onclick="document.getElementById('photoFile').click()"
+                 ondragover="event.preventDefault();this.classList.add('dragover')"
+                 ondragleave="this.classList.remove('dragover')"
+                 ondrop="handleDrop(event)">
+              <div id="uploadPlaceholder" style="padding:10px">
+                <div style="font-size:36px;margin-bottom:8px">📷</div>
+                <p style="font-size:14px;color:var(--text-muted);font-weight:600">Загрузить фото задачи</p>
+                <p style="font-size:12px;color:var(--text-muted)">AI прочитает условие и решит</p>
+              </div>
+              <img id="photoPreview" style="display:none;max-height:200px;border-radius:10px"/>
+            </div>
+            <input type="file" id="photoFile" name="photo" accept="image/*"
+                   style="display:none" onchange="previewPhoto(this)"/>
+            <button type="button" id="clearPhotoBtn" onclick="clearPhoto()"
+                    style="display:none;margin-top:8px" class="btn btn-sm btn-outline">✕ Убрать фото</button>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-large btn-full btn-pulse" id="submitBtn">
+            🔢 Решить задачу
+          </button>
+        </form>
+
+        <!-- Правая панель -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card animate-up" style="background:linear-gradient(135deg,#ede9fe,#e0f2fe)">
+            <h3 style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--primary)">💡 Как использовать</h3>
+            <ul style="font-size:13px;color:var(--text-muted);padding-left:16px;line-height:2">
+              <li>Выберите предмет</li>
+              <li>Введите условие текстом</li>
+              <li>Или загрузите фото задачи</li>
+              <li>Можно совместить оба варианта</li>
+            </ul>
+          </div>
+
+          <div class="card animate-up">
+            <h3 style="font-size:15px;font-weight:700;margin-bottom:10px">📝 Примеры задач</h3>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button onclick="setExample('Найти корни уравнения x² - 5x + 6 = 0')" class="btn btn-outline btn-sm" style="text-align:left;justify-content:flex-start">
+                📐 Квадратное уравнение
+              </button>
+              <button onclick="setExample('Найти площадь треугольника со сторонами a=3, b=4, c=5')" class="btn btn-outline btn-sm" style="text-align:left;justify-content:flex-start">
+                📏 Площадь треугольника
+              </button>
+              <button onclick="setExample('Тело бросают вертикально вверх со скоростью 20 м/с. Найти максимальную высоту')" class="btn btn-outline btn-sm" style="text-align:left;justify-content:flex-start">
+                ⚡ Задача по физике
+              </button>
+              <button onclick="setExample('Реши систему уравнений: 2x + y = 7, x - y = 2')" class="btn btn-outline btn-sm" style="text-align:left;justify-content:flex-start">
+                🔗 Система уравнений
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="loadingOverlay" class="loading-overlay" style="display:none">
+  <div class="loading-card">
+    <div class="spinner"></div>
+    <h3 id="loadingMsg">🔢 AI решает задачу...</h3>
+    <p>Считаю пошагово с объяснением</p>
+  </div>
+</div>
+
+<script th:src="@{/js/main.js}"></script>
+<script>
+function setExample(text) {
+  document.getElementById('problem').value = text;
+}
+function previewPhoto(input) {
+  if (!input.files[0]) return;
+  const r = new FileReader();
+  r.onload = e => {
+    document.getElementById('uploadPlaceholder').style.display='none';
+    const img = document.getElementById('photoPreview');
+    img.src = e.target.result; img.style.display='block';
+    document.getElementById('clearPhotoBtn').style.display='';
+  };
+  r.readAsDataURL(input.files[0]);
+}
+function clearPhoto() {
+  document.getElementById('photoFile').value='';
+  document.getElementById('photoPreview').style.display='none';
+  document.getElementById('uploadPlaceholder').style.display='';
+  document.getElementById('clearPhotoBtn').style.display='none';
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadArea').classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) {
+    const dt = new DataTransfer(); dt.items.add(f);
+    const inp = document.getElementById('photoFile');
+    inp.files = dt.files; previewPhoto(inp);
+  }
+}
+document.getElementById('mathForm').addEventListener('submit', function() {
+  const hasPhoto = document.getElementById('photoFile').files.length > 0;
+  const hasProblem = document.getElementById('problem').value.trim();
+  if (!hasPhoto && !hasProblem) { alert('Введите условие задачи или загрузите фото'); event.preventDefault(); return; }
+  const msg = document.getElementById('loadingMsg');
+  if (hasPhoto) msg.textContent = '📸 AI читает фото и решает...';
+  document.getElementById('loadingOverlay').style.display='flex';
+  document.getElementById('submitBtn').disabled=true;
+});
+</script>
+</body>
+</html>
