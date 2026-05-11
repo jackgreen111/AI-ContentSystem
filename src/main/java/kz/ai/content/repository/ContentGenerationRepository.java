@@ -14,6 +14,9 @@ public interface ContentGenerationRepository extends JpaRepository<ContentGenera
     long countByUser(User user);
     Optional<ContentGeneration> findByShareToken(String shareToken);
 
+    @Query("SELECT g FROM ContentGeneration g WHERE g.user = ?1 AND LOWER(g.topic) LIKE LOWER(CONCAT('%', ?2, '%')) ORDER BY g.createdAt DESC")
+    List<ContentGeneration> searchByTopic(User user, String query);
+
     @Query("SELECT COALESCE(SUM(g.tokensUsed),0) FROM ContentGeneration g WHERE g.user=?1")
     long sumTokensByUser(User user);
 

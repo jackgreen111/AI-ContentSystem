@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -24,12 +25,14 @@ public class ContentController {
     private final UserRepository userRepository;
     private final PromptTemplateRepository templateRepository;
     private final DocumentReaderService documentReaderService;
+    private final kz.ai.content.repository.ContentGenerationRepository contentRepository;
 
     public ContentController(ContentService cs, ExportService es, UserRepository ur,
-                             PromptTemplateRepository tr, DocumentReaderService dr) {
+                             PromptTemplateRepository tr, DocumentReaderService dr,
+                             kz.ai.content.repository.ContentGenerationRepository cr) {
         this.contentService = cs; this.exportService = es;
         this.userRepository = ur; this.templateRepository = tr;
-        this.documentReaderService = dr;
+        this.documentReaderService = dr; this.contentRepository = cr;
     }
 
     // ── Форма генерации ───────────────────────────────────────────────
@@ -296,6 +299,22 @@ public class ContentController {
     public String compare(@AuthenticationPrincipal UserDetails ud, Model model) {
         model.addAttribute("generations", contentService.getUserHistory(getUser(ud)));
         return "content/compare";
+    }
+
+    // ── Поиск для sidebar ───────────────────────────────────────
+    @GetMapping("/search")
+    @ResponseBody
+    public ResponseEntity<?> search(@RequestParam String q,
+                                    @AuthenticationPrincipal UserDetails ud) {
+        if (q == null || q.trim().length() < 2)
+            return ResponseEntity.ok(List.of());
+        User user = getUser(ud);
+        List<Map<String, Object>> results = contentRepository
+                .searchByTopic(user, q.trim())
+                .stream().limit(6)
+                .map(g -> Map.<String, Object>of("id", g.getId(), "topic", g.getTopic()))
+                .toList();
+        return ResponseEntity.ok(results);
     }
 
     private User getUser(UserDetails ud) {

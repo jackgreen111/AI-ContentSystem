@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Генерация — AI Content System</title>
+<link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title">✨ Генерация контента</span>
+    </div>
+    <div class="page-body">
+      <div class="page-header animate-up">
+        <h1>✨ Генерация AI-контента</h1>
+        <p>Заполните параметры и получите качественный текст</p>
+      </div>
+
+      <div class="generate-layout">
+        <form th:action="@{/content/generate}" method="post" enctype="multipart/form-data"
+              class="generate-form animate-up" id="generateForm">
+
+          <div class="form-group">
+            <label for="topic">Тема / описание <span class="label-hint">до 500 символов</span></label>
+            <div style="position:relative">
+              <textarea id="topic" name="topic" rows="3" maxlength="500"
+                        th:text="${topicPrefill}"
+                        placeholder="Например: Введение в машинное обучение для студентов"
+                        required style="padding-right:48px"></textarea>
+              <button type="button" id="micBtn" onclick="toggleVoice()" title="Голосовой ввод"
+                      style="position:absolute;right:10px;top:10px;background:none;border:none;font-size:22px;cursor:pointer;transition:transform .2s">🎤</button>
+            </div>
+            <div class="char-counter"><span id="topicCount">0</span>/500</div>
+            <div id="voiceStatus" style="display:none;font-size:12px;color:var(--primary);margin-top:2px;animation:fadeInUp .3s ease">
+              🔴 Говорите... (нажмите снова чтобы остановить)
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Тип контента</label>
+            <div class="radio-group">
+              <label th:each="type : ${contentTypes}" class="radio-card">
+                <input type="radio" name="contentType" th:value="${type.name()}" th:checked="${type.name()==typePrefill}"/>
+                <span class="radio-icon" th:switch="${type.name()}">
+                  <span th:case="'TEXT'">📝</span><span th:case="'TASK'">📋</span>
+                  <span th:case="'QUESTION'">❓</span><span th:case="'LETTER'">✉️</span>
+                  <span th:case="'PLAN'">📅</span><span th:case="'MATH'">🔢</span>
+                </span>
+                <span th:text="${type.displayName}"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Стиль изложения</label>
+            <div class="select-group">
+              <label th:each="style : ${styles}" class="select-card">
+                <input type="radio" name="style" th:value="${style.name()}" th:checked="${style.name()=='FORMAL'}"/>
+                <span th:text="${style.displayName}"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Язык генерации</label>
+            <div class="select-group">
+              <label th:each="lang : ${languages}" class="select-card">
+                <input type="radio" name="language" th:value="${lang.name()}" th:checked="${lang.name()==langPrefill}"/>
+                <span th:text="${lang.displayName}"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="volume">Объём текста</label>
+            <select id="volume" name="volume">
+              <option th:each="vol : ${volumes}" th:value="${vol.name()}"
+                      th:text="${vol.displayName}" th:selected="${vol.name()=='MEDIUM'}"></option>
+            </select>
+          </div>
+
+            <!-- Фото (необязательно) -->
+            <div class="form-group">
+                <label>📸 Фото / изображение <span class="label-hint">необязательно — AI опишет и учтёт</span></label>
+                <div class="upload-area" id="uploadArea"
+                     onclick="document.getElementById('imageFile').click()"
+                     ondragover="event.preventDefault();this.classList.add('dragover')"
+                     ondragleave="this.classList.remove('dragover')"
+                     ondrop="handleDrop(event)">
+                    <div id="uploadPlaceholder" style="padding:10px">
+                        <div style="font-size:32px;margin-bottom:6px">📷</div>
+                        <p style="font-size:13px;color:var(--text-muted)">Загрузите фото или картинку</p>
+                        <p style="font-size:12px;color:var(--text-muted)">AI опишет содержимое и учтёт при генерации</p>
+                    </div>
+                    <img id="imagePreview" style="display:none;max-height:180px;border-radius:10px"/>
+                </div>
+                <input type="file" id="imageFile" name="image" accept="image/*"
+                       style="display:none" onchange="previewImage(this)"/>
+                <button type="button" id="clearImgBtn" onclick="clearImage()"
+                        style="display:none;margin-top:6px" class="btn btn-sm btn-outline">✕ Убрать фото</button>
+            </div>
+
+          <button type="submit" class="btn btn-primary btn-large btn-full btn-pulse" id="submitBtn">
+            🚀 Генерировать контент
+          </button>
+        </form>
+
+        <div class="tips-panel">
+          <h3>💡 Советы</h3>
+          <ul>
+            <li>🎤 Нажми на микрофон для голосового ввода</li>
+            <li>Чем конкретнее тема — тем лучше результат</li>
+            <li>Для математики используй отдельную страницу</li>
+            <li>Академический стиль добавляет структуру</li>
+          </ul>
+          <div class="tip-example">
+            <strong>Пример:</strong><br/>
+            "Сочинение о влиянии технологий на образование, 3-й курс"
+          </div>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+            <a th:href="@{/content/templates}"  class="btn btn-outline btn-full" style="font-size:13px">📋 Из шаблона</a>
+            <a th:href="@{/content/math}"       class="btn btn-outline btn-full" style="font-size:13px">🔢 Решить задачу</a>
+            <a th:href="@{/content/upload-doc}" class="btn btn-outline btn-full" style="font-size:13px">📄 Загрузить документ</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="loadingOverlay" class="loading-overlay" style="display:none">
+  <div class="loading-card">
+    <div class="spinner"></div>
+    <h3 id="loadingMsg">AI генерирует контент...</h3>
+    <p>Это займёт несколько секунд</p>
+  </div>
+</div>
+
+<script th:src="@{/js/main.js}"></script>
+<script>
+    function previewImage(input) {
+  if (!input.files[0]) return;
+  const r = new FileReader();
+  r.onload = e => {
+    document.getElementById('uploadPlaceholder').style.display='none';
+    const img = document.getElementById('imagePreview');
+    img.src = e.target.result; img.style.display='block';
+    document.getElementById('clearImgBtn').style.display='';
+  };
+  r.readAsDataURL(input.files[0]);
+}
+function clearImage() {
+  document.getElementById('imageFile').value='';
+  document.getElementById('imagePreview').style.display='none';
+  document.getElementById('uploadPlaceholder').style.display='';
+  document.getElementById('clearImgBtn').style.display='none';
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadArea').classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) {
+    const dt = new DataTransfer(); dt.items.add(f);
+    const inp = document.getElementById('imageFile');
+    inp.files = dt.files; previewImage(inp);
+  }
+}
+const topicEl=document.getElementById('topic');
+const counter=document.getElementById('topicCount');
+if(topicEl){counter.textContent=topicEl.value.length;topicEl.addEventListener('input',()=>{const l=topicEl.value.length;counter.textContent=l;counter.style.color=l>450?'#ef4444':'var(--text-muted)';})}
+
+let recognition=null,isListening=false;
+function toggleVoice(){
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){alert('Используйте Chrome для голосового ввода');return;}
+  if(isListening){recognition.stop();return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  recognition=new SR();recognition.lang='ru-RU';recognition.continuous=false;recognition.interimResults=false;
+  recognition.onstart=()=>{isListening=true;document.getElementById('micBtn').style.transform='scale(1.3)';document.getElementById('voiceStatus').style.display='block';};
+  recognition.onresult=e=>{const t=e.results[0][0].transcript;topicEl.value+=(topicEl.value?' ':'')+t;counter.textContent=topicEl.value.length;};
+  recognition.onend=()=>{isListening=false;document.getElementById('micBtn').style.transform='scale(1)';document.getElementById('voiceStatus').style.display='none';};
+  recognition.start();
+}
+</script>
+</body>
+</html>

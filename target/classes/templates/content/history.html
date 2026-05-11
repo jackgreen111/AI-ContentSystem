@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>История — AI Content System</title>
+<link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title">AI Content System</span>
+    </div>
+    <div class="page-body">
+
+  <div class="page-header">
+    <h1>📜 История генераций</h1>
+    <p th:text="'Всего: ' + ${#lists.size(generations)} + ' записей'"></p>
+  </div>
+
+  <!-- Поиск и фильтры -->
+  <div class="search-bar" style="margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap">
+    <input type="text" id="searchInput" placeholder="🔍 Поиск по теме..." style="flex:1;min-width:200px" oninput="filterCards()"/>
+    <select id="typeFilter" onchange="filterCards()" style="width:160px">
+      <option value="">Все типы</option>
+      <option value="Текст">Текст</option>
+      <option value="Задание">Задание</option>
+      <option value="Вопрос">Вопрос</option>
+      <option value="Письмо">Письмо</option>
+      <option value="План">План</option>
+    </select>
+    <select id="ratingFilter" onchange="filterCards()" style="width:160px">
+      <option value="">Все оценки</option>
+      <option value="like">👍 Понравились</option>
+      <option value="dislike">👎 Не понравились</option>
+    </select>
+  </div>
+
+  <div th:if="${#lists.isEmpty(generations)}" class="empty-state">
+    <div class="empty-icon">📄</div>
+    <p>История пуста. <a th:href="@{/content/generate}">Создайте первый контент!</a></p>
+  </div>
+
+  <div class="generation-list" id="cardList" th:unless="${#lists.isEmpty(generations)}">
+    <div th:each="gen : ${generations}" class="generation-card"
+         th:attr="data-topic=${gen.topic}, data-type=${gen.contentType.displayName}, data-rating=${gen.rating}">
+      <div class="gen-card-header">
+        <span class="badge badge-primary" th:text="${gen.contentType.displayName}"></span>
+        <span class="badge" th:text="${gen.language.displayName}"></span>
+        <span th:if="${gen.saved}" class="badge badge-success">★ Сохранено</span>
+        <span th:if="${gen.rating==1}" style="font-size:16px">👍</span>
+        <span th:if="${gen.rating==-1}" style="font-size:16px">👎</span>
+        <span th:if="${gen.wordCount > 0}" class="badge" th:text="${gen.wordCount} + ' сл.'"></span>
+      </div>
+      <div class="gen-card-topic" th:text="${gen.topic}"></div>
+      <div class="gen-card-preview" th:text="${#strings.abbreviate(gen.generatedText,150)}"></div>
+      <!-- Теги -->
+      <div th:if="${gen.tags != null and !#strings.isEmpty(gen.tags)}" style="display:flex;gap:4px;flex-wrap:wrap;margin:6px 0">
+        <span th:each="tag : ${#strings.arraySplit(gen.tags,',')}"
+              class="tag-chip" style="font-size:11px" th:text="${tag}"></span>
+      </div>
+      <div class="gen-card-footer">
+        <span class="gen-date" th:text="${#temporals.format(gen.createdAt,'dd.MM.yyyy HH:mm')}"></span>
+        <div class="gen-card-actions">
+          <a th:href="@{/content/view/{id}(id=${gen.id})}" class="btn btn-sm btn-outline">Открыть</a>
+          <form th:action="@{/content/{id}/toggle-save(id=${gen.id})}" method="post" style="display:inline">
+            <button type="submit" class="btn btn-sm btn-outline"
+                    th:text="${gen.saved}?'★ Убрать':'☆ Сохранить'"></button>
+          </form>
+          <form th:action="@{/content/{id}/delete(id=${gen.id})}" method="post" style="display:inline"
+                onsubmit="return confirm('Удалить?')">
+            <button type="submit" class="btn btn-sm btn-danger">🗑</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script th:src="@{/js/main.js}"></script>
+<script>
+function filterCards() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const type = document.getElementById('typeFilter').value;
+  const rating = document.getElementById('ratingFilter').value;
+  document.querySelectorAll('.generation-card').forEach(card => {
+    const topic = (card.dataset.topic||'').toLowerCase();
+    const cardType = card.dataset.type||'';
+    const cardRating = parseInt(card.dataset.rating||'0');
+    const matchQ = !q || topic.includes(q);
+    const matchType = !type || cardType === type;
+    const matchRating = !rating
+      || (rating==='like' && cardRating===1)
+      || (rating==='dislike' && cardRating===-1);
+    card.style.display = (matchQ && matchType && matchRating) ? '' : 'none';
+  });
+}
+</script>
+    </div>
+  </div>
+</div>
+</body>
+</html>

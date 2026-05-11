@@ -2,6 +2,7 @@ package kz.ai.content.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "content_generations")
@@ -25,6 +26,8 @@ public class ContentGeneration {
     @Column(name = "share_token", unique = true) private String shareToken;
     @Column(name = "image_url", length = 500) private String imageUrl;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "user_id", nullable = false) private User user;
+    @OneToMany(mappedBy = "generation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ContentVersion> versions;
 
     public enum ContentType {
         TEXT("Текст"), TASK("Задание"), QUESTION("Вопрос"),
